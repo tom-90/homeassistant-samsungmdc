@@ -133,10 +133,31 @@ class MdcApi:
         """Return normalized status used by entities/coordinator."""
         client = await self._ensure_client()
 
-        status = await self._call(
-            lambda: client.status(self._display_id), timeout=timeout
+        # status = await self._call(
+        #     lambda: client.status(self._display_id), timeout=timeout
+        # )
+        # power, volume, muted, input_source, *_ = status
+        # not all displays support the status command, so we get the data by individual calls instead
+        power, *_ = (
+            await self._call(
+                lambda: client.power(self._display_id), timeout=timeout
+            )
         )
-        power, volume, muted, input_source, *_ = status
+        volume, *_ = (
+            await self._call(
+                lambda: client.volume(self._display_id), timeout=timeout
+            )  
+        )
+        muted, *_ = (
+            await self._call(
+                lambda: client.mute(self._display_id), timeout=timeout
+            )
+        )
+        input_source, *_ = (
+            await self._call(
+                lambda: client.input_source(self._display_id), timeout=timeout
+            )
+        )
 
         # Only try static info when powered on; otherwise keep last known values
         if power:

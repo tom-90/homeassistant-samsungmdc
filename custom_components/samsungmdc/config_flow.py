@@ -5,7 +5,11 @@ from typing import Tuple
 import logging
 
 from samsung_mdc import MDC
-from samsung_mdc.exceptions import MDCTimeoutError
+from samsung_mdc.exceptions import (
+    MDCTimeoutError,
+    MDCResponseError,
+    NAKError,
+)
 
 import voluptuous as vol
 from voluptuous.schema_builder import message
@@ -80,18 +84,24 @@ class SamsungMDCConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 # Test connection
                 api = MdcApi(host, display_id)
                 try:
-                    await api.async_connect()
+                    try:
+                        await api.async_connect()
 
-                    model = await api.async_command(fn="model_name")
-                    if not model or model == "Unknown":
-                        errors["base"] = RESULT_CANNOT_CONNECT
-                        await api.async_close()
-                        return self.async_show_form(
-                            step_id="user",
-                            data_schema=SCHEMA,
-                            errors=errors,
-                        )
-
+                        model = await api.async_command(fn="model_name")
+                        if not model or model == "Unknown":
+                            errors["base"] = RESULT_CANNOT_CONNECT
+                            await api.async_close()
+                            return self.async_show_form(
+                                step_id="user",
+                                data_schema=SCHEMA,
+                                errors=errors,
+                            )
+                    except NAKError:
+                        # We get a NAKError only if the connection works as such
+                        # But for example the Flip Pro only answers to power, volume, mute, input source and some undocumented smartview+ get/set,
+                        # so in case no serial is returned, create a fake as UUID and set the model to "generic"
+                        model = "generic"
+    
                     # Create unique ID based on host and display ID
                     unique_id = f"{host}_{display_id}"
                     await self.async_set_unique_id(unique_id)
