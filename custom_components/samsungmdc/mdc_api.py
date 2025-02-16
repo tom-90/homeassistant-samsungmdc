@@ -143,6 +143,12 @@ class MdcApi:
                 lambda: client.power(self._display_id), timeout=timeout
             )
         )
+
+        if power != POWER.POWER_STATE.ON:
+            return {
+                "power": power,
+            }
+
         volume, *_ = (
             await self._call(
                 lambda: client.volume(self._display_id), timeout=timeout
