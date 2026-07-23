@@ -116,10 +116,14 @@ class MdcApi:
     async def async_refresh_static_info(self, *, timeout: float = 10.0) -> None:
         """Try to refresh model/SW version (only works when panel is ON)."""
         client = await self._ensure_client()
-        model = await self._call(
-            lambda: client.model_name(self._display_id), timeout=timeout
-        )
-        self._model = model
+
+        try:
+            model = await self._call(
+                lambda: client.model_name(self._display_id), timeout=timeout
+            )
+            self._model = model
+        except NAKError:
+            _LOGGER.debug("Model name not available (likely not supported)")
 
         try:
             sw = await self._call(
@@ -169,13 +173,17 @@ class MdcApi:
         if power:
             await self.async_refresh_static_info(timeout=timeout)
 
-        brightness, *_ = (
-            await self._call(
-                lambda: client.manual_lamp(self._display_id), timeout=timeout
+        try:
+            brightness, *_ = (
+                await self._call(
+                    lambda: client.manual_lamp(self._display_id), timeout=timeout
+                )
+                if power
+                else (None,)
             )
-            if power
-            else (None,)
-        )
+        except NAKError:
+            _LOGGER.debug("Brightness not available (likely not supported)")
+            brightness = None
 
         return {
             "power": power,
