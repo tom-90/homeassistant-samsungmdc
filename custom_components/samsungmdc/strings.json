@@ -25,5 +25,46 @@
       "cannot_connect": "Unable to connect to the MDC display",
       "already_configured": "This MDC Display is already configured"
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Customize the name shown in Home Assistant for each input source. Clear a field to reset it to the default name.",
+        "data": {
+          "NONE": "None",
+          "S_VIDEO": "S-Video",
+          "COMPONENT": "Component",
+          "AV": "AV",
+          "AV2": "AV 2",
+          "SCART1": "SCART 1",
+          "DVI": "DVI",
+          "PC": "PC",
+          "BNC": "BNC",
+          "DVI_VIDEO": "DVI Video",
+          "MAGIC_INFO": "MagicInfo",
+          "HDMI1": "HDMI 1",
+          "HDMI1_PC": "HDMI 1 (PC)",
+          "HDMI2": "HDMI 2",
+          "HDMI2_PC": "HDMI 2 (PC)",
+          "DISPLAY_PORT_1": "DisplayPort 1",
+          "DISPLAY_PORT_2": "DisplayPort 2",
+          "DISPLAY_PORT_3": "DisplayPort 3",
+          "RF_TV": "TV",
+          "HDMI3": "HDMI 3",
+          "HDMI3_PC": "HDMI 3 (PC)",
+          "HDMI4": "HDMI 4",
+          "HDMI4_PC": "HDMI 4 (PC)",
+          "TV_DTV": "DTV",
+          "PLUG_IN_MODE": "Plug in mode",
+          "HD_BASE_T": "HDBaseT",
+          "MEDIA_MAGIC_INFO_S": "MagicInfo S",
+          "WIDI_SCREEN_MIRRORING": "Screen Mirroring",
+          "INTERNAL_USB": "USB",
+          "URL_LAUNCHER": "URL Launcher",
+          "IWB": "IWB",
+          "WEB_BROWSER": "Web Browser"
+        }
+      }
+    }
   }
 }

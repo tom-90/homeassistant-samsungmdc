@@ -26,6 +26,7 @@ from homeassistant.const import (
 
 from .const import (
     CONF_DISPLAY_ID,
+    CONF_SOURCE_NAMES,
     DEFAULT_DISPLAY_ID,
     DEFAULT_NAME,
     DOMAIN,
@@ -34,6 +35,7 @@ from .const import (
     RESULT_INV_IP,
 )
 from .mdc_api import MdcApi
+from .source_map import DEFAULT_SOURCE_NAMES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,6 +68,11 @@ class SamsungMDCConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def __init__(self):
         """Initialize."""
         self._errors = {}
+
+    @staticmethod
+    def async_get_options_flow(config_entry):
+        """Get the options flow for this handler."""
+        return SamsungMDCOptionsFlow()
 
     async def async_step_user(self, user_input):
         """Present form for user input for entering connection details."""
@@ -129,4 +136,32 @@ class SamsungMDCConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=SCHEMA,
             errors=errors,
+        )
+
+
+class SamsungMDCOptionsFlow(config_entries.OptionsFlow):
+    """Options flow allowing the input source names to be customized."""
+
+    async def async_step_init(self, user_input=None):
+        """Show a form with an editable name for every input source."""
+        current = self.config_entry.options.get(CONF_SOURCE_NAMES, {})
+
+        if user_input is not None:
+            source_names = {
+                enum_name: value.strip()
+                for enum_name, value in user_input.items()
+                if value and value.strip() and value.strip() != DEFAULT_SOURCE_NAMES[enum_name]
+            }
+            return self.async_create_entry(data={CONF_SOURCE_NAMES: source_names})
+
+        schema = {
+            vol.Optional(
+                enum_name, default=current.get(enum_name, default_name)
+            ): str
+            for enum_name, default_name in DEFAULT_SOURCE_NAMES.items()
+        }
+
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(schema),
         )

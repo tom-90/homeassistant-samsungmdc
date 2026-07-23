@@ -5,7 +5,7 @@ import logging
 import time
 
 from samsung_mdc import MDC
-from samsung_mdc.commands import INPUT_SOURCE, MUTE, POWER
+from samsung_mdc.commands import MUTE, POWER
 from samsung_mdc.exceptions import (
     MDCTimeoutError,
     MDCResponseError,
@@ -37,43 +37,14 @@ from homeassistant.core import HomeAssistant
 
 from .const import (
     CONF_DISPLAY_ID,
+    CONF_SOURCE_NAMES,
     DOMAIN,
-    SOURCE_AV,
-    SOURCE_AV2,
-    SOURCE_BNC,
-    SOURCE_COMPONENT,
-    SOURCE_DISPLAY_PORT_1,
-    SOURCE_DISPLAY_PORT_2,
-    SOURCE_DISPLAY_PORT_3,
-    SOURCE_DVI,
-    SOURCE_DVI_VIDEO,
-    SOURCE_HD_BASE_T,
-    SOURCE_HDMI1,
-    SOURCE_HDMI1_PC,
-    SOURCE_HDMI2,
-    SOURCE_HDMI2_PC,
-    SOURCE_HDMI3,
-    SOURCE_HDMI3_PC,
-    SOURCE_HDMI4,
-    SOURCE_HDMI4_PC,
-    SOURCE_INTERNAL_USB,
-    SOURCE_IWB,
-    SOURCE_MAGIC_INFO,
-    SOURCE_MEDIA_MAGIC_INFO_S,
     SOURCE_NONE,
-    SOURCE_PC,
-    SOURCE_PLUG_IN_MODE,
-    SOURCE_RF_TV,
-    SOURCE_S_VIDEO,
-    SOURCE_SCART1,
-    SOURCE_TV_DTV,
-    SOURCE_URL_LAUNCHER,
-    SOURCE_WIDI_SCREEN_MIRRORING,
-    SOURCE_WEB_BROWSER,
 )
 
 from .base_entity import SamsungMDCBaseEntity
 from .coordinator import MDCUpdateCoordinator
+from .source_map import build_source_maps
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -85,43 +56,6 @@ POWER_ON_SOCKET_RECONNECT_TIME = (
 )
 POWER_ON_CHECK_INTERVAL = 3  # Check every 3 seconds after socket reconnect
 MAX_POWER_ON_CHECKS = 10  # Try for up to 30 more seconds (10 * 3)
-
-# Map the input sources of the MDC protocol to names for Home Assistant
-ENUM_TO_NAME = {
-    INPUT_SOURCE.INPUT_SOURCE_STATE.NONE: SOURCE_NONE,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.S_VIDEO: SOURCE_S_VIDEO,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.COMPONENT: SOURCE_COMPONENT,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.AV: SOURCE_AV,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.AV2: SOURCE_AV2,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.SCART1: SOURCE_SCART1,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.DVI: SOURCE_DVI,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.PC: SOURCE_PC,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.BNC: SOURCE_BNC,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.DVI_VIDEO: SOURCE_DVI_VIDEO,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.MAGIC_INFO: SOURCE_MAGIC_INFO,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI1: SOURCE_HDMI1,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI1_PC: SOURCE_HDMI1_PC,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI2: SOURCE_HDMI2,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI2_PC: SOURCE_HDMI2_PC,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.DISPLAY_PORT_1: SOURCE_DISPLAY_PORT_1,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.DISPLAY_PORT_2: SOURCE_DISPLAY_PORT_2,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.DISPLAY_PORT_3: SOURCE_DISPLAY_PORT_3,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.RF_TV: SOURCE_RF_TV,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI3: SOURCE_HDMI3,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI3_PC: SOURCE_HDMI3_PC,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI4: SOURCE_HDMI4,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HDMI4_PC: SOURCE_HDMI4_PC,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.TV_DTV: SOURCE_TV_DTV,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.PLUG_IN_MODE: SOURCE_PLUG_IN_MODE,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.HD_BASE_T: SOURCE_HD_BASE_T,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.MEDIA_MAGIC_INFO_S: SOURCE_MEDIA_MAGIC_INFO_S,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.WIDI_SCREEN_MIRRORING: SOURCE_WIDI_SCREEN_MIRRORING,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.INTERNAL_USB: SOURCE_INTERNAL_USB,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.URL_LAUNCHER: SOURCE_URL_LAUNCHER,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.IWB: SOURCE_IWB,
-    INPUT_SOURCE.INPUT_SOURCE_STATE.WEB_BROWSER: SOURCE_WEB_BROWSER,
-}
-NAME_TO_ENUM = {v: k for k, v in ENUM_TO_NAME.items()}
 
 
 async def async_setup_entry(
@@ -138,6 +72,7 @@ async def async_setup_entry(
     coordinator: MDCUpdateCoordinator = data["coordinator"]
     device_unique_id = data["unique_base"]
     device_model = entry.data.get(CONF_MODEL, "Unknown")
+    source_overrides = entry.options.get(CONF_SOURCE_NAMES, {})
 
     unique_id = f"{device_unique_id}-media_player"
 
@@ -149,6 +84,7 @@ async def async_setup_entry(
                 model=device_model,
                 unique_id=unique_id,
                 device_unique_id=device_unique_id,
+                source_overrides=source_overrides,
             )
         ],
         True,
@@ -168,6 +104,26 @@ class SamsungMDCMediaPlayer(SamsungMDCBaseEntity, MediaPlayerEntity):
         | MediaPlayerEntityFeature.TURN_ON
         | MediaPlayerEntityFeature.VOLUME_STEP
     )
+
+    def __init__(
+        self,
+        coordinator: MDCUpdateCoordinator,
+        *,
+        name: str | None,
+        model: str | None,
+        unique_id: str,
+        device_unique_id: str,
+        source_overrides: dict[str, str] | None = None,
+    ) -> None:
+        """Initialize the media player, building the source maps with any overrides applied."""
+        super().__init__(
+            coordinator,
+            name=name,
+            model=model,
+            unique_id=unique_id,
+            device_unique_id=device_unique_id,
+        )
+        self._enum_to_name, self._name_to_enum = build_source_maps(source_overrides)
 
     # ----- State mapping from coordinator cache -----
     @property
@@ -208,14 +164,14 @@ class SamsungMDCMediaPlayer(SamsungMDCBaseEntity, MediaPlayerEntity):
     @property
     def source_list(self):
         """Return the list of available input sources for the display."""
-        return list(ENUM_TO_NAME.values())
+        return list(self._enum_to_name.values())
 
     @property
     def source(self):
         """Return the current input source of the display."""
         data = self.coordinator.data or {}
         src_enum = data.get("input")
-        return ENUM_TO_NAME.get(src_enum, SOURCE_NONE)
+        return self._enum_to_name.get(src_enum, SOURCE_NONE)
 
     # ----- Commands delegate to coordinator (which handles retries) -----
     async def async_turn_on(self) -> None:
@@ -252,5 +208,5 @@ class SamsungMDCMediaPlayer(SamsungMDCBaseEntity, MediaPlayerEntity):
 
         """
         await self.coordinator.async_execute(
-            "input_source", args=[NAME_TO_ENUM[source]]
+            "input_source", args=[self._name_to_enum[source]]
         )

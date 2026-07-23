@@ -24,5 +24,46 @@
                 "description": "Enter your Samsung TV information. If you never connected Home Assistant before you should see a popup on your TV asking for authorization."
             }
         }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "data": {
+                    "AV": "AV",
+                    "AV2": "AV 2",
+                    "BNC": "BNC",
+                    "COMPONENT": "Component",
+                    "DISPLAY_PORT_1": "DisplayPort 1",
+                    "DISPLAY_PORT_2": "DisplayPort 2",
+                    "DISPLAY_PORT_3": "DisplayPort 3",
+                    "DVI": "DVI",
+                    "DVI_VIDEO": "DVI Video",
+                    "HDMI1": "HDMI 1",
+                    "HDMI1_PC": "HDMI 1 (PC)",
+                    "HDMI2": "HDMI 2",
+                    "HDMI2_PC": "HDMI 2 (PC)",
+                    "HDMI3": "HDMI 3",
+                    "HDMI3_PC": "HDMI 3 (PC)",
+                    "HDMI4": "HDMI 4",
+                    "HDMI4_PC": "HDMI 4 (PC)",
+                    "HD_BASE_T": "HDBaseT",
+                    "INTERNAL_USB": "USB",
+                    "IWB": "IWB",
+                    "MAGIC_INFO": "MagicInfo",
+                    "MEDIA_MAGIC_INFO_S": "MagicInfo S",
+                    "NONE": "None",
+                    "PC": "PC",
+                    "PLUG_IN_MODE": "Plug in mode",
+                    "RF_TV": "TV",
+                    "SCART1": "SCART 1",
+                    "S_VIDEO": "S-Video",
+                    "TV_DTV": "DTV",
+                    "URL_LAUNCHER": "URL Launcher",
+                    "WEB_BROWSER": "Web Browser",
+                    "WIDI_SCREEN_MIRRORING": "Screen Mirroring"
+                },
+                "description": "Customize the name shown in Home Assistant for each input source. Clear a field to reset it to the default name."
+            }
+        }
     }
 }

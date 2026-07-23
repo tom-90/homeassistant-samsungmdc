@@ -29,6 +29,7 @@ CONF_NAME = homeassistant_consts.CONF_NAME
 CONF_PORT = homeassistant_consts.CONF_PORT
 CONF_TIMEOUT = homeassistant_consts.CONF_TIMEOUT
 CONF_DISPLAY_ID = "display_id"
+CONF_SOURCE_NAMES = "source_names"
 DEFAULT_DISPLAY_ID = 1
 DEFAULT_POLL_INTERVAL = 10
 
